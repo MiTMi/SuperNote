@@ -5,14 +5,14 @@ import SwiftData
 final class Note {
     var id: UUID = UUID()
     var body: String = ""
-    var backgroundColorHex: String = "#FFF8B8"
+    var backgroundColorHex: String = "#FFDD00"
     var createdAt: Date = Date.now
     var updatedAt: Date = Date.now
 
     init(
         id: UUID = UUID(),
         body: String = "",
-        backgroundColorHex: String = "#FFF8B8",
+        backgroundColorHex: String = "#FFDD00",
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {

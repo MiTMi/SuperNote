@@ -5,12 +5,6 @@ struct NoteEditorView: View {
     @Bindable var note: Note
     @Environment(\.modelContext) private var modelContext
 
-    static let palette: [String] = [
-        "#FFF8B8", "#FFD8A8", "#FFB8B8", "#E0C8FF",
-        "#B8D8FF", "#B8F0E0", "#D8F0B8", "#FFFFFF",
-        "#2A2A2A"
-    ]
-
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -32,7 +26,7 @@ struct NoteEditorView: View {
             Spacer()
             ColorChipPicker(
                 selectedHex: note.backgroundColorHex,
-                palette: Self.palette
+                palette: Palette.all
             ) { newHex in
                 note.backgroundColorHex = newHex
                 note.updatedAt = .now
@@ -57,10 +51,14 @@ struct NoteEditorView: View {
 
 private struct ColorChipPicker: View {
     let selectedHex: String
-    let palette: [String]
+    let palette: [PaletteColor]
     let onSelect: (String) -> Void
 
     @State private var isShowing = false
+
+    private var selectedTooltip: String {
+        Palette.name(forHex: selectedHex) ?? "Background color"
+    }
 
     var body: some View {
         Button {
@@ -91,7 +89,7 @@ private struct ColorChipPicker: View {
             .contentShape(RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
-        .help("Background color")
+        .help(selectedTooltip)
         .popover(isPresented: $isShowing, arrowEdge: .top) {
             paletteGrid
                 .padding(12)
@@ -105,12 +103,12 @@ private struct ColorChipPicker: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(palette, id: \.self) { hex in
+                ForEach(palette) { color in
                     ColorSwatch(
-                        hex: hex,
-                        isSelected: hex.uppercased() == selectedHex.uppercased()
+                        color: color,
+                        isSelected: color.hex.uppercased() == selectedHex.uppercased()
                     ) {
-                        onSelect(hex)
+                        onSelect(color.hex)
                         isShowing = false
                     }
                 }
@@ -121,7 +119,7 @@ private struct ColorChipPicker: View {
 }
 
 private struct ColorSwatch: View {
-    let hex: String
+    let color: PaletteColor
     let isSelected: Bool
     let action: () -> Void
 
@@ -129,7 +127,7 @@ private struct ColorSwatch: View {
         Button(action: action) {
             ZStack {
                 RoundedRectangle(cornerRadius: 7)
-                    .fill(Color(hex: hex) ?? .gray)
+                    .fill(Color(hex: color.hex) ?? .gray)
                     .frame(width: 26, height: 26)
                     .overlay(
                         RoundedRectangle(cornerRadius: 7)
@@ -145,5 +143,6 @@ private struct ColorSwatch: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .help(color.name.isEmpty ? color.hex : color.name)
     }
 }
