@@ -2,23 +2,25 @@ import AppKit
 
 final class NotePanel: NSPanel {
     override var canBecomeKey: Bool { true }
-    override var canBecomeMain: Bool { false }
+    override var canBecomeMain: Bool { true }
 
     init(contentRect: NSRect) {
         super.init(
             contentRect: contentRect,
-            styleMask: [.nonactivatingPanel, .borderless, .fullSizeContentView],
+            styleMask: [.nonactivatingPanel, .borderless, .fullSizeContentView, .resizable],
             backing: .buffered,
             defer: false
         )
         isFloatingPanel = true
-        level = .popUpMenu
+        level = .floating
+        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         hidesOnDeactivate = false
         becomesKeyOnlyIfNeeded = false
-        isMovableByWindowBackground = false
+        isMovableByWindowBackground = true
         animationBehavior = .utilityWindow
         backgroundColor = .clear
         isOpaque = false
         hasShadow = true
+        minSize = NSSize(width: 360, height: 280)
     }
 }

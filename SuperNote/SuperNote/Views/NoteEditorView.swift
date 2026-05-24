@@ -4,10 +4,16 @@ import SwiftUI
 struct NoteEditorView: View {
     @Bindable var note: Note
     @Environment(\.modelContext) private var modelContext
+    @State private var formatController = EditorFormatController()
 
     var body: some View {
         VStack(spacing: 0) {
             header
+            FormattingToolbar(controller: formatController)
+                .background(.ultraThinMaterial.opacity(0.7))
+                .overlay(alignment: .bottom) {
+                    Divider().opacity(0.5)
+                }
             editor
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -18,12 +24,25 @@ struct NoteEditorView: View {
     }
 
     private var header: some View {
-        HStack {
+        HStack(spacing: 8) {
             Text(note.updatedAt, format: .relative(presentation: .named))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
             Spacer()
+            Button {
+                note.isPinned.toggle()
+                try? modelContext.save()
+            } label: {
+                Image(systemName: note.isPinned ? "pin.fill" : "pin")
+                    .font(.system(size: 13, weight: .medium))
+                    .rotationEffect(.degrees(note.isPinned ? 45 : 0))
+                    .foregroundStyle(note.isPinned ? Color.accentColor : .secondary)
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(note.isPinned ? "Unpin note" : "Pin note")
             ColorChipPicker(
                 selectedHex: note.backgroundColorHex,
                 palette: Palette.all
@@ -44,7 +63,11 @@ struct NoteEditorView: View {
     private var editor: some View {
         ZStack {
             Color(hex: note.backgroundColorHex) ?? Color(nsColor: .windowBackgroundColor)
-            MarkdownTextView(text: $note.body, backgroundHex: note.backgroundColorHex)
+            MarkdownTextView(
+                text: $note.body,
+                backgroundHex: note.backgroundColorHex,
+                formatController: formatController
+            )
         }
     }
 }

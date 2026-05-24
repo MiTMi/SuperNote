@@ -4,6 +4,7 @@ import SwiftUI
 struct MarkdownTextView: NSViewRepresentable {
     @Binding var text: String
     var backgroundHex: String
+    var formatController: EditorFormatController?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(text: $text)
@@ -52,11 +53,15 @@ struct MarkdownTextView: NSViewRepresentable {
         }
 
         context.coordinator.textView = textView
+        formatController?.textView = textView
         return scrollView
     }
 
     func updateNSView(_ nsView: NSScrollView, context: Context) {
         guard let textView = nsView.documentView as? NSTextView else { return }
+        if formatController?.textView !== textView {
+            formatController?.textView = textView
+        }
         let newAppearance = appearanceForBackground
         if textView.appearance !== newAppearance {
             nsView.appearance = newAppearance

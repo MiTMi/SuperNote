@@ -5,8 +5,8 @@ import SwiftUI
 @MainActor
 final class PanelController {
     private let panel: NotePanel
-    private var globalMonitor: Any?
     private weak var anchorButton: NSStatusBarButton?
+    private var hasInitialPosition = false
 
     private static let panelSize = NSSize(width: 520, height: 420)
 
@@ -38,14 +38,15 @@ final class PanelController {
 
     func show(relativeTo button: NSStatusBarButton) {
         anchorButton = button
-        positionPanel(under: button)
+        if !hasInitialPosition {
+            positionPanel(under: button)
+            hasInitialPosition = true
+        }
         panel.orderFront(nil)
         panel.makeKey()
-        installDismissMonitors()
     }
 
     func hide() {
-        removeDismissMonitors()
         panel.orderOut(nil)
     }
 
@@ -64,16 +65,5 @@ final class PanelController {
         }
 
         panel.setFrame(frame, display: false)
-    }
-
-    private func installDismissMonitors() {
-        globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            Task { @MainActor in self?.hide() }
-        }
-    }
-
-    private func removeDismissMonitors() {
-        if let globalMonitor { NSEvent.removeMonitor(globalMonitor) }
-        globalMonitor = nil
     }
 }

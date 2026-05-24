@@ -11,7 +11,7 @@ enum AppContainer {
     private static let useCloudKit = false
 
     static let shared: ModelContainer = {
-        let schema = Schema([Note.self])
+        let schema = Schema([Note.self, Folder.self])
 
         let primaryConfig: ModelConfiguration
         if useCloudKit {
@@ -32,6 +32,7 @@ enum AppContainer {
             do {
                 return try ModelContainer(for: schema, configurations: [memoryConfig])
             } catch {
+                log.error("In-memory ModelContainer also failed: \(String(describing: error), privacy: .public)")
                 fatalError("Unable to create in-memory ModelContainer: \(error)")
             }
         }
