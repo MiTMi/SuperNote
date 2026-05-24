@@ -3,6 +3,7 @@ import AppKit
 enum MarkdownStyler {
     static let bodyFont = NSFont.systemFont(ofSize: 14)
     static let monoFont = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
+    static let hiddenFont = NSFont.systemFont(ofSize: 0.01)
 
     private static let headingFonts: [Int: NSFont] = [
         1: .systemFont(ofSize: 24, weight: .bold),
@@ -27,26 +28,24 @@ enum MarkdownStyler {
         storage.setAttributes(bodyAttributes, range: paragraphRange)
 
         applyHeadings(storage: storage, in: paragraphRange)
-        applyInline(pattern: #"\*\*([^*\n]+)\*\*"#, weightBold: true, storage: storage, range: paragraphRange)
-        applyInline(pattern: #"(?<!\*)\*(?!\*)([^*\n]+?)(?<!\*)\*(?!\*)"#, italic: true, storage: storage, range: paragraphRange)
-        applyInline(pattern: "`([^`\n]+)`", mono: true, storage: storage, range: paragraphRange)
+        applyInline(pattern: #"\*\*([^*\n]+)\*\*"#, weightBold: true, markerLength: 2, storage: storage, range: paragraphRange)
+        applyInline(pattern: #"(?<!\*)\*(?!\*)([^*\n]+?)(?<!\*)\*(?!\*)"#, italic: true, markerLength: 1, storage: storage, range: paragraphRange)
+        applyInline(pattern: "`([^`\n]+)`", mono: true, markerLength: 1, storage: storage, range: paragraphRange)
         applyLinks(storage: storage, in: paragraphRange)
         applyListAndQuote(storage: storage, in: paragraphRange)
     }
 
     private static func applyHeadings(storage: NSTextStorage, in range: NSRange) {
-        guard let regex = try? NSRegularExpression(pattern: #"^(#{1,3})\s+.*$"#, options: [.anchorsMatchLines]) else { return }
+        guard let regex = try? NSRegularExpression(pattern: #"^(#{1,3}\s+)(.*)$"#, options: [.anchorsMatchLines]) else { return }
         regex.enumerateMatches(in: storage.string, options: [], range: range) { match, _, _ in
-            guard let match, match.numberOfRanges >= 2 else { return }
-            let hashesRange = match.range(at: 1)
-            guard hashesRange.location != NSNotFound,
-                  let hashesNSRange = Range(hashesRange, in: storage.string) else { return }
-            let level = storage.string[hashesNSRange].count
+            guard let match, match.numberOfRanges >= 3 else { return }
+            let prefixRange = match.range(at: 1)
+            guard prefixRange.location != NSNotFound else { return }
+            let prefixString = (storage.string as NSString).substring(with: prefixRange)
+            let level = prefixString.prefix(while: { $0 == "#" }).count
             guard let font = headingFonts[level] else { return }
-            storage.addAttributes([.font: font], range: match.range)
-            storage.addAttributes([.foregroundColor: NSColor.labelColor], range: match.range)
-            let hashesAttrRange = match.range(at: 1)
-            storage.addAttribute(.foregroundColor, value: NSColor.tertiaryLabelColor, range: hashesAttrRange)
+            storage.addAttributes([.font: font, .foregroundColor: NSColor.labelColor], range: match.range)
+            hide(storage: storage, range: prefixRange)
         }
     }
 
@@ -55,6 +54,7 @@ enum MarkdownStyler {
         weightBold: Bool = false,
         italic: Bool = false,
         mono: Bool = false,
+        markerLength: Int = 0,
         storage: NSTextStorage,
         range: NSRange
     ) {
@@ -74,15 +74,34 @@ enum MarkdownStyler {
             if mono {
                 storage.addAttribute(.backgroundColor, value: NSColor.quaternaryLabelColor, range: fullRange)
             }
+            if markerLength > 0, fullRange.length >= markerLength * 2 {
+                let leading = NSRange(location: fullRange.location, length: markerLength)
+                let trailing = NSRange(
+                    location: fullRange.location + fullRange.length - markerLength,
+                    length: markerLength
+                )
+                hide(storage: storage, range: leading)
+                hide(storage: storage, range: trailing)
+            }
         }
     }
 
     private static func applyLinks(storage: NSTextStorage, in range: NSRange) {
         guard let regex = try? NSRegularExpression(pattern: #"\[([^\]\n]+)\]\(([^)\n]+)\)"#, options: []) else { return }
         regex.enumerateMatches(in: storage.string, options: [], range: range) { match, _, _ in
-            guard let match else { return }
-            storage.addAttribute(.foregroundColor, value: NSColor.linkColor, range: match.range)
-            storage.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: match.range)
+            guard let match, match.numberOfRanges >= 3 else { return }
+            let fullRange = match.range
+            let textRange = match.range(at: 1)
+            storage.addAttribute(.foregroundColor, value: NSColor.linkColor, range: textRange)
+            storage.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: textRange)
+            let openBracket = NSRange(location: fullRange.location, length: 1)
+            let closeStart = textRange.location + textRange.length
+            let trailingLength = fullRange.location + fullRange.length - closeStart
+            if trailingLength > 0 {
+                let trailing = NSRange(location: closeStart, length: trailingLength)
+                hide(storage: storage, range: trailing)
+            }
+            hide(storage: storage, range: openBracket)
         }
     }
 
@@ -102,5 +121,10 @@ enum MarkdownStyler {
                 storage.addAttribute(.font, value: italicFont, range: match.range)
             }
         }
+    }
+
+    private static func hide(storage: NSTextStorage, range: NSRange) {
+        storage.addAttribute(.foregroundColor, value: NSColor.clear, range: range)
+        storage.addAttribute(.font, value: hiddenFont, range: range)
     }
 }
