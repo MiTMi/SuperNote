@@ -15,6 +15,10 @@ struct RootView: View {
 
     @State private var selectedScope: SidebarSelection = .allNotes
     @State private var selectedNoteID: UUID?
+    @State private var syncMonitor = CloudSyncMonitor(
+        enabled: AppContainer.useCloudKit,
+        containerID: AppContainer.cloudKitContainerID
+    )
 
     private var rootFolders: [Folder] {
         folders.filter { $0.parent == nil }
@@ -72,6 +76,7 @@ struct RootView: View {
                 selectedNoteID: $selectedNoteID,
                 inTrash: inTrash,
                 trashCount: notes.filter { $0.isTrashed }.count,
+                syncMonitor: syncMonitor,
                 onCreateNote: { createNote(in: selectedFolder) },
                 onTrashNote: trashNote,
                 onRestoreNote: restoreNote,

@@ -5,20 +5,22 @@ import os
 enum AppContainer {
     private static let log = Logger(subsystem: "com.michaeltouboul.SuperNote", category: "AppContainer")
 
+    static let cloudKitContainerID = "iCloud.com.michaeltouboul.SuperNote"
+
     // Flip to `true` after enabling the iCloud capability in Xcode
     // (Target → Signing & Capabilities → + Capability → iCloud → CloudKit →
     //  add container "iCloud.com.michaeltouboul.SuperNote").
-    private static let useCloudKit = false
+    static let useCloudKit = true
 
     static let shared: ModelContainer = {
-        let schema = Schema([Note.self, Folder.self])
+        let schema = Schema([Note.self, Folder.self, Attachment.self])
 
         let primaryConfig: ModelConfiguration
         if useCloudKit {
             primaryConfig = ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
-                cloudKitDatabase: .private("iCloud.com.michaeltouboul.SuperNote")
+                cloudKitDatabase: .private(cloudKitContainerID)
             )
         } else {
             primaryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)

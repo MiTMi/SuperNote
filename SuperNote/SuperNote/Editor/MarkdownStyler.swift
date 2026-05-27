@@ -25,7 +25,7 @@ enum MarkdownStyler {
         let paragraphRange = nsString.paragraphRange(for: clamped)
         guard paragraphRange.length >= 0 else { return }
 
-        storage.setAttributes(bodyAttributes, range: paragraphRange)
+        resetAttributes(in: storage, range: paragraphRange)
 
         applyHeadings(storage: storage, in: paragraphRange)
         applyInline(pattern: #"\*\*([^*\n]+)\*\*"#, weightBold: true, markerLength: 2, storage: storage, range: paragraphRange)
@@ -126,5 +126,15 @@ enum MarkdownStyler {
     private static func hide(storage: NSTextStorage, range: NSRange) {
         storage.addAttribute(.foregroundColor, value: NSColor.clear, range: range)
         storage.addAttribute(.font, value: hiddenFont, range: range)
+    }
+
+    /// Resets attributes to `bodyAttributes` while preserving `NSTextAttachment`
+    /// runs — `setAttributes` would otherwise wipe out inline images.
+    private static func resetAttributes(in storage: NSTextStorage, range: NSRange) {
+        storage.enumerateAttribute(.attachment, in: range, options: []) { value, subrange, _ in
+            if value == nil {
+                storage.setAttributes(bodyAttributes, range: subrange)
+            }
+        }
     }
 }

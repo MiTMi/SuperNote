@@ -8,6 +8,7 @@ struct SidebarView: View {
     @Binding var selectedNoteID: UUID?
     let inTrash: Bool
     let trashCount: Int
+    let syncMonitor: CloudSyncMonitor
 
     let onCreateNote: () -> Void
     let onTrashNote: (Note) -> Void
@@ -39,6 +40,8 @@ struct SidebarView: View {
             Divider()
             notesHeader
             notesList
+            Divider()
+            CloudSyncStatusView(monitor: syncMonitor)
         }
         .alert(
             "Rename Folder",

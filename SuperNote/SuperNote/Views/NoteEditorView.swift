@@ -66,7 +66,8 @@ struct NoteEditorView: View {
             MarkdownTextView(
                 text: $note.body,
                 backgroundHex: note.backgroundColorHex,
-                formatController: formatController
+                formatController: formatController,
+                modelContext: modelContext
             )
         }
     }
