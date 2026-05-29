@@ -22,3 +22,7 @@ Carthage/Build/
 *.tmp
 .idea/
 .vscode/
+
+# Exported app builds / archives (from Xcode Organizer "Distribute")
+/SuperNote */
+*.xcarchive/
